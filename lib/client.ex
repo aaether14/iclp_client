@@ -6,7 +6,10 @@ defmodule Client do
 
     def serve(pid) do
         command = IO.gets ""
-        unless command === "exit\n" do
+        if command === "exit\n" do
+            # send close message to TcpClient
+            send(pid, {:close})
+        else
             preprocessed_command = preprocess_command(command)
             send(pid, {:command, preprocessed_command})
             serve(pid)
@@ -37,6 +40,7 @@ defmodule TcpClient do
             {:command, command} ->
                 :gen_tcp.send(socket, command)
                 serve(socket, buffer)
+            {:close} -> exit(:client_closed)
             # the rest of the code handles respones from the server
             # we only need to display server respones/notifications
             {:tcp, _, data} ->
